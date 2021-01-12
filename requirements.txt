@@ -1,0 +1,4 @@
+datasets
+transformers
+memory_profiler
+matplotlib
