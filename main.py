@@ -27,12 +27,17 @@ Vou tentar responder essas questões:
     Sim, depois de processado o arquivo original pode ser apagado que ele reaproveita do cache
 
 3 - Quanto tempo leva pra tokenizar e salvar essa versão do dataset e qual o tamanho dele?
+    Levou cerca de 3h consumindo até 7.5GB de memória. Teve um custo de armazenamento adicional de cerca de 65GB para o cache intermediário. 
+    Porém a versão final dos arquivos do dataset consume apenas 35GB
 
 4 - Uma vez salvo, quanto tempo leva pra carregar a versão processada do dataset?
+    Depois de salvo levou apenas 8s pra carregar o dataset e consumiu cerca de 180MB
 
-5 - Quanto de memória é consumido quando são criados batches com tamanho fixo mas com amostras randômicas utilizando o cache? A ideia aqui é simular como o cache vai se comportar durante o treinamento.
+5 - Quanto de memória é consumida quando são criados batches com tamanho fixo mas com amostras randômicas utilizando o cache? A ideia aqui é simular como o cache vai se comportar durante o treinamento.
 
 6 - Como seria o consumo de memória e tempo se ao invés de fazer o load dessa versão já tokenizada eu fizesse a tokenização on-the-fly?
+    A julgar pelo tempo que levou o processo de tokenização da questão 3, nem vou testar essa hipotese
+
 """
 
 DATA_DIR = "/Users/jonatas/data/brwac"
@@ -60,17 +65,19 @@ def load():
     brwac_dataset = datasets.load_dataset("brwac", split='train', data_dir=DATA_DIR, cache_dir=CACHE_DIR)
     return brwac_dataset
 
+
 def encode(doc):
 
-    encoded_sentences = []
+    sentences = []
 
     # TODO: fazer um PR pro HG pra transformar o paragraphs->sentences em body->paragraphs
     for paragraph in doc.get("paragraphs").get("sentences"):
-        for sentence in paragraph:
-            input_ids = TOKENIZER(sentence).get("input_ids")
-            encoded_sentences.append(input_ids)
+        sentences = sentences + paragraph
+
+    encoded_sentences = TOKENIZER(sentences).get("input_ids")
 
     return {"encoded_sentences": encoded_sentences}
+
 
 def preprocess_data():
     
@@ -87,16 +94,24 @@ def preprocess_data():
 
     # removing one-line documents
     print(f"dataset size pre one-line filter: {len(processed_dataset)}")
-    processed_dataset = processed_dataset.filter(lambda doc, i: len(doc.get("encoded_sentences")) > 1, with_indices=True)
+    processed_dataset = processed_dataset.filter(lambda doc: len(doc.get("encoded_sentences")) > 1)
     print(f"dataset size pos one-line filter: {len(processed_dataset)}")
 
     print("saving data...")
     processed_dataset.save_to_disk(PROCESSED_DATA_CACHE_DIR)
 
+
+def load_preprocessed_data():
+
+    reloaded_dataset = datasets.load_from_disk(PROCESSED_DATA_CACHE_DIR)
+    print(reloaded_dataset[0])
+
+
 @time_it
 def main():
     # load()
-    preprocess_data()
+    # preprocess_data()
+    load_preprocessed_data()
 
 if __name__ == "__main__":
     main()
