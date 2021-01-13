@@ -1,4 +1,7 @@
+import gc
+import torch
 import datasets
+import random
 from transformers import AutoTokenizer  # Or BertTokenizer
 from functools import wraps
 from time import time
@@ -34,6 +37,7 @@ Vou tentar responder essas questões:
     Depois de salvo levou apenas 8s pra carregar o dataset e consumiu cerca de 180MB
 
 5 - Quanto de memória é consumida quando são criados batches com tamanho fixo mas com amostras randômicas utilizando o cache? A ideia aqui é simular como o cache vai se comportar durante o treinamento.
+    Eu simulei 1K steps com um batch de 2K com seleção aleatória. O consumo máximo de memória foi de 330MB, esse processo levou 25min pra ser conncluído
 
 6 - Como seria o consumo de memória e tempo se ao invés de fazer o load dessa versão já tokenizada eu fizesse a tokenização on-the-fly?
     A julgar pelo tempo que levou o processo de tokenização da questão 3, nem vou testar essa hipotese
@@ -101,17 +105,54 @@ def preprocess_data():
     processed_dataset.save_to_disk(PROCESSED_DATA_CACHE_DIR)
 
 
-def load_preprocessed_data():
+def load_preprocessed_data(print_first_sample=True):
 
     reloaded_dataset = datasets.load_from_disk(PROCESSED_DATA_CACHE_DIR)
-    print(reloaded_dataset[0])
 
+    if print_first_sample:
+
+        for encoded_sentence in reloaded_dataset[0].get("encoded_sentences"):
+            print(f"{'=' * 100}")
+            print(f"ids: {encoded_sentence}")
+            print(f"tokens: {TOKENIZER.convert_ids_to_tokens(encoded_sentence)}")
+            print(f"decoded: {TOKENIZER.decode(encoded_sentence)}")
+
+    return reloaded_dataset
+
+def random_batch_iteration(batch_size=2000, max_steps=1000):
+
+    reloaded_dataset = load_preprocessed_data(False)
+
+    dataset_indexes = list(range(len(reloaded_dataset)))
+    random.shuffle(dataset_indexes) # shuffle indexes
+
+    batch = []
+    step = 1
+    for i in dataset_indexes:
+
+        # reloaded_dataset[i] increases memory indefinitely, we'll need to use reloaded_dataset.select to prevent OOM
+
+        batch.append(reloaded_dataset.select([i])) # append sample to a list for naive batch loading emulation
+
+        if len(batch) % batch_size == 0: # emulate an optimization step
+            print("Use your imagination... pretend I'm using the batch for some optimization process")
+            print(f"step {step}/{max_steps}")
+            step += 1
+
+            # emulate batch reconstruction (trying to force memory deallocation)
+            # del batch
+            # gc.collect()
+            batch = []
+        
+        if step == max_steps:
+            break
 
 @time_it
 def main():
     # load()
     # preprocess_data()
-    load_preprocessed_data()
+    # load_preprocessed_data()
+    random_batch_iteration()
 
 if __name__ == "__main__":
     main()
