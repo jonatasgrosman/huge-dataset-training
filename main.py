@@ -42,6 +42,11 @@ Vou tentar responder essas questões:
 6 - Como seria o consumo de memória e tempo se ao invés de fazer o load dessa versão já tokenizada eu fizesse a tokenização on-the-fly?
     A julgar pelo tempo que levou o processo de tokenização da questão 3, nem vou testar essa hipotese
 
+7 - Qual a diferença de tempo em usar o datasets.select por item X por batch?
+    por item = 25min (5_mprofile_20210113132657.dat)
+    por batch = 11s usando a msm qtd de memória... holy shit! (7_mprofile_20210115131308.dat)
+
+    Acho que vamos ter que implementar um dataloader que carregue os items lote https://gist.github.com/SsnL/205a4cd2e4e631a42cc9d8e879a296dc
 """
 
 DATA_DIR = "/Users/jonatas/data/brwac"
@@ -119,7 +124,7 @@ def load_preprocessed_data(print_first_sample=True):
 
     return reloaded_dataset
 
-def random_batch_iteration(batch_size=2000, max_steps=1000):
+def random_batch_iteration(batch_size=2000, max_steps=1000, select_in_batch=False):
 
     reloaded_dataset = load_preprocessed_data(False)
 
@@ -131,10 +136,16 @@ def random_batch_iteration(batch_size=2000, max_steps=1000):
     for i in dataset_indexes:
 
         # reloaded_dataset[i] increases memory indefinitely, we'll need to use reloaded_dataset.select to prevent OOM
-
-        batch.append(reloaded_dataset.select([i])) # append sample to a list for naive batch loading emulation
+        if select_in_batch:
+            batch.append(i)
+        else:
+            batch.append(reloaded_dataset.select([i])) # append sample to a list for naive batch loading emulation
 
         if len(batch) % batch_size == 0: # emulate an optimization step
+
+            if select_in_batch:
+                batch = reloaded_dataset.select(batch) # using ids for naive batch loading emulation
+
             print("Use your imagination... pretend I'm using the batch for some optimization process")
             print(f"step {step}/{max_steps}")
             step += 1
@@ -152,7 +163,7 @@ def main():
     # load()
     # preprocess_data()
     # load_preprocessed_data()
-    random_batch_iteration()
+    random_batch_iteration(select_in_batch=False)
 
 if __name__ == "__main__":
     main()
