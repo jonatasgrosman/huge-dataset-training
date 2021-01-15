@@ -46,7 +46,10 @@ Vou tentar responder essas questões:
     por item = 25min (5_mprofile_20210113132657.dat)
     por batch = 11s usando a msm qtd de memória... holy shit! (7_mprofile_20210115131308.dat)
 
-    Acho que vamos ter que implementar um dataloader que carregue os items lote https://gist.github.com/SsnL/205a4cd2e4e631a42cc9d8e879a296dc
+    Acho que vamos ter que implementar um dataloader que carregue os items lote 
+    https://github.com/pytorch/pytorch/issues/13023
+    https://github.com/pytorch/pytorch/issues/21645
+    https://gist.github.com/SsnL/205a4cd2e4e631a42cc9d8e879a296dc
 """
 
 DATA_DIR = "/Users/jonatas/data/brwac"
