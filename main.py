@@ -163,10 +163,10 @@ def random_batch_iteration(batch_size=2000, max_steps=1000, select_in_batch=Fals
 
 @time_it
 def main():
-    # load()
-    # preprocess_data()
-    # load_preprocessed_data()
-    random_batch_iteration(select_in_batch=False)
+    # load() # 1, 2
+    # preprocess_data() # 3, 5
+    # load_preprocessed_data() # 4
+    random_batch_iteration(select_in_batch=False) # 6, 7
 
 if __name__ == "__main__":
     main()
