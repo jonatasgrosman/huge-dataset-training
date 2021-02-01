@@ -1,14 +1,18 @@
 # huge-dataset-training
 ## install
 
-python -m venv venv
+```
+$ python -m venv venv
 
-. venv/bin/activate
+$ . venv/bin/activate
 
-pip install -r requirements.txt
+$ pip install -r requirements.txt
+```
 
 ## execute
 
-mprof run main.py
-mprof plot
+```
+$ mprof run main.py
 
+$ mprof plot
+```
